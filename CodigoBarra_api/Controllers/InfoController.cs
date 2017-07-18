@@ -39,64 +39,119 @@ namespace CodigoBarra_api.Controllers
         {
             string email = Regex.Replace(Correo, @"\""", "");
             string code = Regex.Replace(Value, @"\""", "");
-
-            if (ValueEncript)   
+            
+            if (!IsValidEmail(email))
             {
-                byte[] inputBytes = Encoding.ASCII.GetBytes(Value);
-                byte[] encripted;
-                RijndaelManaged cripto = new RijndaelManaged();
-                using (MemoryStream ms = new MemoryStream(inputBytes.Length))
+                email = "Por favor introduzca una dirección de correo válido";
+                code = "";
+            }
+            else {
+                if (ValueEncript)
                 {
-                    using (CryptoStream objCryptoStream = new CryptoStream(ms, cripto.CreateEncryptor(Clave, IV), CryptoStreamMode.Write))
+                    byte[] inputBytes = Encoding.ASCII.GetBytes(code);
+                    byte[] encripted;
+                    
+                    RijndaelManaged cripto = new RijndaelManaged();
+                    using (MemoryStream ms = new MemoryStream(inputBytes.Length))
                     {
-                        objCryptoStream.Write(inputBytes, 0, inputBytes.Length);
-                        objCryptoStream.FlushFinalBlock();
-                        objCryptoStream.Close();
+                        using (CryptoStream objCryptoStream = new CryptoStream(ms, cripto.CreateEncryptor(Clave, IV), CryptoStreamMode.Write))
+                        {
+                            objCryptoStream.Write(inputBytes, 0, inputBytes.Length);
+                            objCryptoStream.FlushFinalBlock();
+                            objCryptoStream.Close();
+                        }
+                        encripted = ms.ToArray();
                     }
-                    encripted = ms.ToArray();
+                    code = Regex.Replace(Convert.ToBase64String(encripted), @"[^0-9A-Za-z]", "", RegexOptions.None);
+
+                    //string hola = Regex.Replace(code, @"[^\/w\.@-]", "");
+                    
                 }
-                code = Convert.ToBase64String(encripted);
+
+                Barcode barcode = new Barcode();
+
+                barcode.IncludeLabel = true;
+                barcode.Alignment = AlignmentPositions.CENTER;
+                barcode.Width = 500;
+                barcode.Height = 100;
+                Image img = barcode.Encode(TYPE.CODE39Extended, code);
+
+                if ($"{rute}\\{code}.png{code}.png" != $"{rute}\\{code}.png")
+                {
+                    img.Save($"{rute}\\{code}.png");
+                }
+
+                
+
+                MailCode(email, code);
             }
 
-            Barcode barcode = new Barcode();
-
-            barcode.IncludeLabel = true;
-            barcode.Alignment = AlignmentPositions.CENTER;
-            barcode.Width = 500;
-            barcode.Height = 100;
-            Image img = barcode.Encode(TYPE.CODE39Extended, code);
-            img.Save($"{rute}\\{code}.png");
-
-            MailCode(email, code);
-            InfoEncrypt[] Data = new InfoEncrypt[]{new InfoEncrypt(){ Email = email, CodeEncryp = code }};
+            InfoEncrypt[] Data = new InfoEncrypt[] { new InfoEncrypt() { Email = email, CodeEncryp = code } };
 
             return Data;
         }
 
         public IEnumerable<InfoDesEncrypt> GetDesencrypted(string CodigoDesEncryp)
         {
-            string DesEncription = Regex.Replace(CodigoDesEncryp, @"\""", "");
+            string DesEncription;
+            string DesEncription1 = "";
 
-            byte[] inputBytes = Convert.FromBase64String(DesEncription);
-            byte[] resultBytes = new byte[inputBytes.Length];
-            string textoLimpio = String.Empty;
-            RijndaelManaged cripto = new RijndaelManaged();
-            using (MemoryStream ms = new MemoryStream(inputBytes))
+            if (CodigoDesEncryp == "" || CodigoDesEncryp == null)
             {
-                using (CryptoStream objCryptoStream = new CryptoStream(ms, cripto.CreateDecryptor(Clave, IV), CryptoStreamMode.Read))
+                DesEncription1 = "Por favor incluya un valor valido para la des-encripcion";
+            }
+            else {
+                DesEncription = Regex.Replace(CodigoDesEncryp, @"\""", "");
+
+
+                string dummyData = DesEncription.Trim().Replace(" ", "+");
+                if (dummyData.Length % 4 > 0)
+                    dummyData = dummyData.PadRight(dummyData.Length + 4 - dummyData.Length % 4, '=');
+                //byte[] byteArray = Convert.FromBase64String(dummyData);
+
+                byte[] inputBytes = Convert.FromBase64String(dummyData);
+
+                byte[] resultBytes = new byte[inputBytes.Length];
+                string textoLimpio = String.Empty;
+                RijndaelManaged cripto = new RijndaelManaged();
+                using (MemoryStream ms = new MemoryStream(inputBytes))
                 {
-                    using (StreamReader sr = new StreamReader(objCryptoStream, true))
+                    using (CryptoStream objCryptoStream = new CryptoStream(ms, cripto.CreateDecryptor(Clave, IV), CryptoStreamMode.Read))
                     {
-                        textoLimpio = sr.ReadToEnd();
+                        using (StreamReader sr = new StreamReader(objCryptoStream, true))
+                        {
+                            textoLimpio = sr.ReadToEnd();
+                        }
                     }
                 }
-            }
 
-            string DesEncription1 = Regex.Replace(textoLimpio, @"\""", "");
+                DesEncription1 = Regex.Replace(textoLimpio, @"\""", "");
+            }
 
             InfoDesEncrypt[] DataDesEnceryp = new InfoDesEncrypt[] { new InfoDesEncrypt() { CodeDesEncryp = DesEncription1 } };
 
             return DataDesEnceryp;
+        }
+
+        public static bool IsValidEmail(string email)
+        {
+            string expresion;
+            expresion = "\\w+([-+.']\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*";
+            if (Regex.IsMatch(email, expresion))
+            {
+                if (Regex.Replace(email, expresion, string.Empty).Length == 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public string htmlImage(string code) {
@@ -113,6 +168,10 @@ namespace CodigoBarra_api.Controllers
         {
             try
             {
+                string remite = ConfigurationManager.AppSettings["email"];
+                string passRemite = ConfigurationManager.AppSettings["password"];
+                string smtp = ConfigurationManager.AppSettings["smt"];
+
                 AlternateView htmlView = AlternateView.CreateAlternateViewFromString(htmlImage(code), Encoding.UTF8, MediaTypeNames.Text.Html);
 
                 LinkedResource img1 = new LinkedResource(HttpContext.Current.Server.MapPath($"/CodeBar/{code}.png"), MediaTypeNames.Image.Jpeg);
@@ -120,8 +179,8 @@ namespace CodigoBarra_api.Controllers
                 htmlView.LinkedResources.Add(img1);
                 
                 MailMessage mail = new MailMessage();
-                SmtpClient SmtpServer = new SmtpClient("smtp.gmail.com");
-                mail.From = new MailAddress("constoso.prueba@gmail.com", "Codigo de barra generado", Encoding.UTF8);
+                SmtpClient SmtpServer = new SmtpClient(smtp);
+                mail.From = new MailAddress(remite, "Codigo de barra generado", Encoding.UTF8);
                 mail.Subject = "Código de barra";
                 mail.IsBodyHtml = true;
                 mail.AlternateViews.Add(htmlView);
@@ -130,7 +189,7 @@ namespace CodigoBarra_api.Controllers
                 //Configuracion del SMTP
                 SmtpServer.Port = 587; //Puerto que utiliza Gmail para sus servicios
                 //Especificamos las credenciales con las que enviaremos el mail
-                SmtpServer.Credentials = new NetworkCredential("constoso.prueba@gmail.com", "Contoso123456");
+                SmtpServer.Credentials = new NetworkCredential(remite, passRemite);
                 SmtpServer.EnableSsl = true;
                 SmtpServer.Send(mail);
 
