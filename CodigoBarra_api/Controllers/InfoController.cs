@@ -63,9 +63,6 @@ namespace CodigoBarra_api.Controllers
                         encripted = ms.ToArray();
                     }
                     code = Regex.Replace(Convert.ToBase64String(encripted), @"[^0-9A-Za-z]", "", RegexOptions.None);
-
-                    //string hola = Regex.Replace(code, @"[^\/w\.@-]", "");
-                    
                 }
 
                 Barcode barcode = new Barcode();
@@ -76,12 +73,10 @@ namespace CodigoBarra_api.Controllers
                 barcode.Height = 100;
                 Image img = barcode.Encode(TYPE.CODE39Extended, code);
 
-                if ($"{rute}\\{code}.png{code}.png" != $"{rute}\\{code}.png")
-                {
-                    img.Save($"{rute}\\{code}.png");
-                }
+                if (File.Exists($"{rute}\\{code}.png"))
+                    File.Delete($"{rute}\\{code}.png");
 
-                
+                img.Save($"{rute}\\{code}.png", ImageFormat.Png);
 
                 MailCode(email, code);
             }
