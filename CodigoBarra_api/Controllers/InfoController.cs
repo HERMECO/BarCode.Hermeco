@@ -23,11 +23,20 @@ namespace CodigoBarra_api.Controllers
         {
             return "Por favor incluya 3 parametros validos para encriptar ('Email', 'Codigo', 'ValueEncript')";
         }
-
-        public byte[] Clave = Encoding.ASCII.GetBytes("Encrytion");// Clave de cifrado. NOTA: Puede ser cualquier combinación de carácteres.
-        public byte[] IV = Encoding.ASCII.GetBytes("Devjoker7.37hAES");
-
+        
         public string rute = Path.Combine(HttpContext.Current.Server.MapPath("/CodeBar")); // Ruta dinamica para la imagen
+
+        // Se encripta la cadena
+        public static string ConvertStringToHex(String input, Encoding encoding)
+        {
+            Byte[] stringBytes = encoding.GetBytes(input);
+            StringBuilder sbBytes = new StringBuilder(stringBytes.Length * 2);
+            foreach (byte b in stringBytes)
+            {
+                sbBytes.AppendFormat("{0:X2}", b);
+            }
+            return sbBytes.ToString();
+        }
 
         // GET: api/Info/5
         public IEnumerable<InfoEncrypt> GetEncryption(string Correo, string Value, bool ValueEncript)
@@ -61,9 +70,7 @@ namespace CodigoBarra_api.Controllers
                 {
                     if (ValueEncript)
                     {
-                        string result = string.Empty;
-                        byte[] encryted = Encoding.Unicode.GetBytes(code);
-                        code = Convert.ToBase64String(encryted);
+                        code = ConvertStringToHex(code, Encoding.Unicode);
                     }
 
                     Barcode barcode = new Barcode();
@@ -95,10 +102,21 @@ namespace CodigoBarra_api.Controllers
             return Data;
         }
 
+        // Se des-encripta la cadena 
+        public static string ConvertHexToString(String hexInput, Encoding encoding)
+        {
+            int numberChars = hexInput.Length;
+            byte[] bytes = new byte[numberChars / 2];
+            for (int i = 0; i < numberChars; i += 2)
+            {
+                bytes[i / 2] = Convert.ToByte(hexInput.Substring(i, 2), 16);
+            }
+            return encoding.GetString(bytes);
+        }
+
         public IEnumerable<InfoDesEncrypt> GetDesencrypted(string CodigoDesEncryp)
         {
-            string DesEncription;  
-            //string DesEncription1 = "";
+            string DesEncription = String.Empty;
 
             if (CodigoDesEncryp == "\"\"" || CodigoDesEncryp == null)
             {
@@ -106,10 +124,7 @@ namespace CodigoBarra_api.Controllers
             }
             else {
                 DesEncription = Regex.Replace(CodigoDesEncryp, @"\""", "");
-                string result = string.Empty;
-                byte[] decryted = Convert.FromBase64String(DesEncription);
-                //result = System.Text.Encoding.Unicode.GetString(decryted, 0, decryted.ToArray().Length);
-                DesEncription = Encoding.Unicode.GetString(decryted);
+                DesEncription = ConvertHexToString(DesEncription, Encoding.Unicode);
             }
 
             InfoDesEncrypt[] DataDesEnceryp = new InfoDesEncrypt[] { new InfoDesEncrypt() { CodeDesEncryp = DesEncription } };
@@ -173,14 +188,11 @@ namespace CodigoBarra_api.Controllers
                 mail.To.Add(email);
 
                 //Configuracion del SMTP
-                SmtpServer.Port = 25; //Puerto que utiliza Gmail para sus servicios
-                //Especificamos las credenciales con las que enviaremos el mail
-                //SmtpServer.Credentials = new NetworkCredential(emailRemite, passRemite);
+                SmtpServer.Port = 25;
                 SmtpServer.DeliveryMethod = SmtpDeliveryMethod.Network;
                 SmtpServer.UseDefaultCredentials = false;
                 SmtpServer.Host = smtp;
-
-                //SmtpServer.EnableSsl = true;
+                
                 SmtpServer.Send(mail);
 
                 return true;
