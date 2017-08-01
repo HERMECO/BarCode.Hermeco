@@ -144,11 +144,12 @@ namespace CodigoBarra_api.Controllers
 
             StringBuilder body = new StringBuilder();
             body.AppendLine(html);
-            body.Replace("<h2>title</h2>", $"<h4>Código generado: </h4> <label> {code} </label>");
+            body.Replace("<h2 class='title-barcode'>Api BarCode Hermeco</h2>", $"<h4>Código generado: </h4> <label> {code} </label>");
             body.Replace("<div class='image-barcode'>", @"<div>");
             body.Replace("&#-image", @"<img src=""cid:code"" alt='Code'>");
             return body.ToString();
         }
+
         public Boolean MailCode(string email, string code)
         {
             try
