@@ -30,7 +30,7 @@ namespace CodigoBarra_api.Controllers
         public static string ConvertStringToHex(String input, Encoding encoding)
         {
             Byte[] stringBytes = encoding.GetBytes(input);
-            StringBuilder sbBytes = new StringBuilder(stringBytes.Length * 2);
+            StringBuilder sbBytes = new StringBuilder(stringBytes.Length);
             foreach (byte b in stringBytes)
             {
                 sbBytes.AppendFormat("{0:X2}", b);
