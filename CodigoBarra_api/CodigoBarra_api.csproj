@@ -101,8 +101,10 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Models\InfoDesEncrypt.cs" />
-    <Compile Include="Models\InfoEncrypt.cs" />
+    <Compile Include="Models\ObjectDesEncrypt.cs" />
+    <Compile Include="Models\InicializerDes.cs" />
+    <Compile Include="Models\ObjectEncrypt.cs" />
+    <Compile Include="Models\InicializerEnc.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

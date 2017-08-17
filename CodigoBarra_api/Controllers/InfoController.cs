@@ -39,7 +39,7 @@ namespace CodigoBarra_api.Controllers
         }
 
         // GET: api/Info/5
-        public IEnumerable<InfoEncrypt> GetEncryption(string Correo, string Value, bool ValueEncript)
+        public IHttpActionResult GetEncryption(string Correo, string Value, bool ValueEncript)
         {
             string email = String.Empty;
             string code = String.Empty;
@@ -97,9 +97,20 @@ namespace CodigoBarra_api.Controllers
                 }
             }
 
-            InfoEncrypt[] Data = new InfoEncrypt[] { new InfoEncrypt() { Email = email, CodeEncryp = code } };
+            InicializerEnc encrypt = new InicializerEnc
+            {
+                ObjectEncrypts = new List<ObjectEncrypt>
+                {
+                    new ObjectEncrypt
+                    {
+                        Email = email,
+                        CodeEncryp = code
+                    }
 
-            return Data;
+                }
+            };
+
+            return Ok(encrypt);
         }
 
         // Se des-encripta la cadena 
@@ -114,7 +125,7 @@ namespace CodigoBarra_api.Controllers
             return encoding.GetString(bytes);
         }
 
-        public IEnumerable<InfoDesEncrypt> GetDesencrypted(string CodigoDesEncryp)
+        public IHttpActionResult GetDesencrypted(string CodigoDesEncryp)
         {
             string DesEncription = String.Empty;
 
@@ -127,9 +138,19 @@ namespace CodigoBarra_api.Controllers
                 DesEncription = ConvertHexToString(DesEncription, Encoding.Unicode);
             }
 
-            InfoDesEncrypt[] DataDesEnceryp = new InfoDesEncrypt[] { new InfoDesEncrypt() { CodeDesEncryp = DesEncription } };
+            InicializerDes des_encrypt = new InicializerDes
+            {
+                ObjectDesEncrypts = new List<ObjectDesEncrypt>
+                {
+                    new ObjectDesEncrypt
+                    {
+                       CodeDesEncryp = DesEncription
+                    }
 
-            return DataDesEnceryp;
+                }
+            };
+
+            return Ok(des_encrypt);
         }
 
         public static bool IsValidEmail(string email)

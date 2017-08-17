@@ -5,9 +5,8 @@ using System.Web;
 
 namespace CodigoBarra_api.Models
 {
-    public class InfoEncrypt
+    public class InicializerDes
     {
-        public string Email { get; set; }
-        public string CodeEncryp { get; set; }  
+        public IList<ObjectDesEncrypt> ObjectDesEncrypts { get; set; }  
     }
 }
