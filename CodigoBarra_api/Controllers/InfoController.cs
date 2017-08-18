@@ -68,8 +68,12 @@ namespace CodigoBarra_api.Controllers
                 }
                 else
                 {
+                    code = $"-{code}";
+
                     if (ValueEncript)
                     {
+                        
+                        code = code.Substring(1);
                         code = ConvertStringToHex(code, Encoding.Unicode);
                     }
 
@@ -116,13 +120,21 @@ namespace CodigoBarra_api.Controllers
         // Se des-encripta la cadena 
         public static string ConvertHexToString(String hexInput, Encoding encoding)
         {
-            int numberChars = hexInput.Length;
-            byte[] bytes = new byte[numberChars / 2];
-            for (int i = 0; i < numberChars; i += 2)
+            try
             {
-                bytes[i / 2] = Convert.ToByte(hexInput.Substring(i, 2), 16);
+                int numberChars = hexInput.Length;
+                byte[] bytes = new byte[numberChars / 2];
+                for (int i = 0; i < numberChars; i += 2)
+                {
+                    bytes[i / 2] = Convert.ToByte(hexInput.Substring(i, 2), 16);
+                }
+                return encoding.GetString(bytes);
             }
-            return encoding.GetString(bytes);
+            catch (Exception ex)
+            {
+
+                return ex.Message;
+            }
         }
 
         public IHttpActionResult GetDesencrypted(string CodigoDesEncryp)
@@ -134,8 +146,13 @@ namespace CodigoBarra_api.Controllers
                 DesEncription = "Porfavor introduzca un valor para el parametro (CodigoDesEncryp)";
             }
             else {
+
                 DesEncription = Regex.Replace(CodigoDesEncryp, @"\""", "");
-                DesEncription = ConvertHexToString(DesEncription, Encoding.Unicode);
+
+                if (!DesEncription.Contains("-"))
+                {
+                    DesEncription = ConvertHexToString(DesEncription, Encoding.Unicode);
+                }
             }
 
             InicializerDes des_encrypt = new InicializerDes
@@ -146,7 +163,6 @@ namespace CodigoBarra_api.Controllers
                     {
                        CodeDesEncryp = DesEncription
                     }
-
                 }
             };
 
